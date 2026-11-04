@@ -12,10 +12,14 @@
     <string name="badge_sunrise_start_rule">해 뜨기 전 1시간 안에 출발합니다</string>
     <string name="badge_sunset_drive">노을 드라이브</string>
     <string name="badge_sunset_drive_rule">해 지는 시각 앞뒤 15분 안에 달립니다</string>
+
+    <string name="say_reveal">새 도장 %1$d개, 배지 %2$d개를 모았습니다.</string>
+
     <string name="route_gangneung_coast">강릉 해안도로</string>
     <string name="route_gangneung_coast_detail">경포에서 사천진까지 7km. 창문을 열면 해안도로 바람 배지를 받습니다.</string>
     <string name="route_daegwallyeong">대관령 밤 고갯길</string>
     <string name="route_daegwallyeong_detail">평창 횡계에서 강릉 성산까지 12km. 전조등을 켜면 밤의 고개 배지를 받습니다.</string>
+
     <string name="spot_gangneung_coast">강릉 해안도로</string>
     <string name="spot_daegwallyeong">대관령 옛길</string>
     <string name="spot_heonhwa">헌화로</string>
@@ -24,4 +28,7 @@
     <string name="spot_dalmaji">달맞이길</string>
     <string name="spot_aewol">애월 해안도로</string>
     <string name="spot_mulmi">물미해안도로</string>
+
+    <string name="notice_channel">주행 기록</string>
+    <string name="notice_text">달린 시군구를 기록하고 있습니다</string>
 </resources>
