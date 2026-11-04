@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.chagok"
-        minSdk = 28
+        minSdk = 34
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.pleos.tts)
     implementation(libs.pleos.fused)
     testImplementation(libs.junit)
+    testImplementation(libs.org.json)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }
