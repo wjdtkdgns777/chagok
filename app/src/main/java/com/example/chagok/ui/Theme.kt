@@ -25,24 +25,24 @@ data class Palette(
 )
 
 private val DarkPalette = Palette(
-    background = Color(0xFF101113),
-    surface = Color(0xFF18191C),
-    pressed = Color(0xFF25272B),
-    line = Color(0xFF2C2E33),
-    text = Color(0xFFF3F4F6),
-    textSub = Color(0xFFA3A8B0),
-    accent = Color(0xFF3FD39A),
-    onAccent = Color(0xFF07150F),
+    background = Color(0xFF15120F),
+    surface = Color(0xFF1F1B17),
+    pressed = Color(0xFF2C2620),
+    line = Color(0xFF3A322A),
+    text = Color(0xFFF7F1EA),
+    textSub = Color(0xFFB4A99C),
+    accent = Color(0xFFFF7A59),
+    onAccent = Color(0xFF2A0B03),
 )
 
 private val LightPalette = Palette(
-    background = Color(0xFFF7F7F8),
+    background = Color(0xFFFAF5EE),
     surface = Color(0xFFFFFFFF),
-    pressed = Color(0xFFEBECEF),
-    line = Color(0xFFE1E3E7),
-    text = Color(0xFF111214),
-    textSub = Color(0xFF555A62),
-    accent = Color(0xFF0B7D54),
+    pressed = Color(0xFFF0E8DD),
+    line = Color(0xFFE6DACB),
+    text = Color(0xFF1E1913),
+    textSub = Color(0xFF61574B),
+    accent = Color(0xFFC2412A),
     onAccent = Color(0xFFFFFFFF),
 )
 

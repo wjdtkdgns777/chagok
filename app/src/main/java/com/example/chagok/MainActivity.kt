@@ -1,22 +1,18 @@
 package com.example.chagok
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.activity.result.contract.ActivityResultContracts
+import com.example.chagok.ui.ChagokApp
 import com.example.chagok.ui.ChagokTheme
-import com.example.chagok.ui.LocalPalette
-import com.example.chagok.ui.Text
-import com.example.chagok.ui.Type
 
 class MainActivity : ComponentActivity() {
+
+    private val permissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { Drive.watchLocation() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,14 +23,25 @@ class MainActivity : ComponentActivity() {
             }
         })
 
+        if (Store.settings.consented) begin()
+
         setContent {
-            ChagokTheme(still = false) {
-                val palette = LocalPalette.current
-                Column(Modifier.fillMaxSize().background(palette.background), Arrangement.Center, Alignment.CenterHorizontally) {
-                    Text(stringResource(R.string.app_name), Type.headline, palette.text)
-                    Text(stringResource(R.string.tagline), Type.body, palette.textSub)
-                }
+            ChagokTheme(still = Drive.driving) {
+                ChagokApp(
+                    driving = Drive.driving,
+                    onAgree = {
+                        Store.update(Store.settings.copy(consented = true))
+                        begin()
+                    },
+                    onLater = { moveTaskToBack(true) },
+                )
             }
         }
+    }
+
+    private fun begin() {
+        DriveService.start(this)
+        val missing = listOf(Drive.LOCATION_PERMISSION, Manifest.permission.POST_NOTIFICATIONS).filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isNotEmpty()) permissions.launch(missing.toTypedArray())
     }
 }
