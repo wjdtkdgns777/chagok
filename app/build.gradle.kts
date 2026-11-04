@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.pleos.tts)
     implementation(libs.pleos.fused)
     testImplementation(libs.junit)
+    testImplementation(libs.org.json)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }
