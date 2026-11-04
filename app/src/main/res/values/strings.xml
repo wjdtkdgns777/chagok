@@ -1,4 +1,27 @@
 <resources>
     <string name="app_name">차곡</string>
     <string name="tagline">차로 다닌 곳과 순간이 차곡차곡 쌓입니다</string>
+
+    <string name="badge_coast_wind">해안도로 바람</string>
+    <string name="badge_coast_wind_rule">해안 명소 도로에서 창문을 연 채 1km 넘게 달립니다</string>
+    <string name="badge_rain_driver">빗길 드라이버</string>
+    <string name="badge_rain_driver_rule">와이퍼를 켠 채 모두 100km를 달립니다</string>
+    <string name="badge_night_pass">밤의 고개</string>
+    <string name="badge_night_pass_rule">고개 명소 도로를 전조등을 켠 채 끝까지 지납니다</string>
+    <string name="badge_sunrise_start">해돋이 출발</string>
+    <string name="badge_sunrise_start_rule">해 뜨기 전 1시간 안에 출발합니다</string>
+    <string name="badge_sunset_drive">노을 드라이브</string>
+    <string name="badge_sunset_drive_rule">해 지는 시각 앞뒤 15분 안에 달립니다</string>
+    <string name="route_gangneung_coast">강릉 해안도로</string>
+    <string name="route_gangneung_coast_detail">경포에서 사천진까지 7km. 창문을 열면 해안도로 바람 배지를 받습니다.</string>
+    <string name="route_daegwallyeong">대관령 밤 고갯길</string>
+    <string name="route_daegwallyeong_detail">평창 횡계에서 강릉 성산까지 12km. 전조등을 켜면 밤의 고개 배지를 받습니다.</string>
+    <string name="spot_gangneung_coast">강릉 해안도로</string>
+    <string name="spot_daegwallyeong">대관령 옛길</string>
+    <string name="spot_heonhwa">헌화로</string>
+    <string name="spot_misiryeong">미시령 옛길</string>
+    <string name="spot_hangyeryeong">한계령</string>
+    <string name="spot_dalmaji">달맞이길</string>
+    <string name="spot_aewol">애월 해안도로</string>
+    <string name="spot_mulmi">물미해안도로</string>
 </resources>
