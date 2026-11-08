@@ -18,8 +18,6 @@ Pleos Connect 차량용 앱 | 현대차그룹 차량용 앱 개발 공모전 출
 
 <img src=".github/readme/demo.gif" width="100%" alt="강릉 해안도로를 재생하고 기어를 D로 넣으면 주행 기록 중 한 줄 화면이 되고, P에 두면 새 도장 2장(밤의 강릉시, 밤의 강릉 해안도로)이 열린 뒤 도장 탭, 도장첩, 배지 탭을 보는 시연">
 
-<sub>Pleos Connect 에뮬레이터 v2.1.0에서 녹화했습니다. 출발 15초와 정차 뒤 44초를 이어 붙였습니다.</sub>
-
 </div>
 
 <br>
@@ -364,12 +362,3 @@ flowchart LR
 </details>
 
 <br>
-
-## 데이터 출처와 라이선스
-
-| 데이터 | 출처 | 라이선스 |
-|---|---|---|
-| 시군구 경계 | 통계청 SGIS 경계를 가공한 [vuski/admdongkor](https://github.com/vuski/admdongkor) 2026-10-01판을 256곳으로 합치고 약 100m 단위로 단순화(937KB) | CC BY 4.0, 공공누리 제1유형 |
-| 명소 좌표 | 시연용 근사값 | - |
-| 아이콘 | Google [Material Symbols](https://github.com/google/material-design-icons), [Tabler Icons](https://github.com/tabler/tabler-icons) | Apache 2.0, MIT |
-
