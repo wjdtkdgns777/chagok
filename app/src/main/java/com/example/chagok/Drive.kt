@@ -183,7 +183,7 @@ object Drive {
         val result = pending ?: return@Runnable
         pending = null
         reveal = result
-        if (Store.settings.voice) voice.speak(context.getString(R.string.say_reveal, result.stamps.size, result.badges.size))
+        voice.speak(context.getString(R.string.say_reveal, result.stamps.size, result.badges.size))
     }
 
     private fun onPosition(point: Point) {

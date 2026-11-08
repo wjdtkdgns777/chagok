@@ -1,26 +1,26 @@
 package com.example.chagok.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -29,9 +29,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -55,9 +57,9 @@ internal fun MapPage() {
     }
     TwoColumns(
         left = {
-            val count = regions.all.count { it.code in stamped }
+            Text(stringResource(R.string.map_title), Type.body, palette.textSub)
             Row(verticalAlignment = Alignment.Bottom) {
-                RollingNumber(count, Type.hero.copy(brush = palette.heroBrush), Color.Unspecified, fromZero = true)
+                RollingNumber(regions.all.count { it.code in stamped }, Type.hero.copy(brush = palette.heroBrush), Color.Unspecified, fromZero = true)
                 Spacer(Modifier.width(Space.s))
                 Text(stringResource(R.string.map_total, regions.all.size), Type.title, palette.text, Modifier.padding(bottom = 18.dp))
             }
@@ -65,22 +67,8 @@ internal fun MapPage() {
             StampMap(regions, stamped)
         },
         right = {
-            SectionHeader(stringResource(R.string.map_provinces), null)
-            Panel(regions.all.groupBy { it.province }.entries.sortedByDescending { (_, list) -> list.count { it.code in stamped } }) { (province, list) ->
-                val done = list.count { it.code in stamped }
-                Row(Modifier.fillMaxWidth().heightIn(min = 64.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(province, Type.label, if (done > 0) palette.text else palette.textSub, Modifier.width(240.dp))
-                    Box(Modifier.weight(1f).height(6.dp).background(palette.line, CircleShape)) {
-                        if (done > 0) Box(Modifier.fillMaxWidth(done / list.size.toFloat()).fillMaxHeight().background(palette.accentBrush, CircleShape))
-                    }
-                    Text("$done/${list.size}", Type.label, if (done > 0) palette.text else palette.textSub, Modifier.width(96.dp), TextAlign.End)
-                }
-            }
-            Spacer(Modifier.height(Space.xl))
-            SectionHeader(stringResource(R.string.map_spots), stringResource(R.string.map_spot_count, Rules.spots.count { it.code in stamped }, Rules.spots.size))
-            Spacer(Modifier.height(Space.xl))
             SectionHeader(stringResource(R.string.map_recent), null)
-            val recent = Store.stamps.sortedByDescending { it.at }.take(RECENT_STAMPS)
+            val recent = Store.stamps.sortedByDescending { it.at }
             if (recent.isEmpty()) Text(stringResource(R.string.map_empty), Type.body, palette.textSub, Modifier.padding(vertical = Space.m))
             else Panel(recent) { stamp ->
                 Row(Modifier.fillMaxWidth().heightIn(min = Space.touch), verticalAlignment = Alignment.CenterVertically) {
@@ -130,26 +118,38 @@ private fun x(lon: Double) = (lon * MAP_LON_SCALE).toFloat()
 internal fun BadgesPage() {
     val palette = LocalPalette.current
     val earned = Store.earned.associateBy { it.badge }
-    val wiperKm = (Store.trips.sumOf { it.wiperM } / 1000).toInt()
     Column(Modifier.verticalScroll(rememberScrollState())) {
         SectionHeader(stringResource(R.string.badges_title), stringResource(R.string.badges_count, earned.size, Badge.entries.size))
-        Panel(Badge.entries) { badge ->
-            val got = earned[badge]
-            Row(Modifier.fillMaxWidth().heightIn(min = 120.dp).padding(vertical = Space.s), verticalAlignment = Alignment.CenterVertically) {
-                StampMark(got != null, Modifier.size(40.dp))
-                Spacer(Modifier.width(Space.m))
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(badge.title), Type.bodyStrong, if (got != null) palette.text else palette.textSub)
-                    Text(stringResource(badge.rule), Type.label, palette.textSub)
+        Spacer(Modifier.height(Space.s))
+        Badge.entries.chunked(BADGE_COLUMNS).forEach { row ->
+            Row(Modifier.fillMaxWidth().padding(bottom = Space.m), horizontalArrangement = Arrangement.spacedBy(Space.m)) {
+                row.forEach { badge ->
+                    val got = earned[badge]
+                    val progress = Rules.progress(badge, Store.trips, Store.stamps)
+                    Column(Modifier.weight(1f).glass(palette).padding(Space.m), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Medal(badge, got != null)
+                        Spacer(Modifier.height(Space.s))
+                        Text(stringResource(badge.title), Type.bodyStrong, if (got != null) palette.text else palette.textSub, align = TextAlign.Center)
+                        Text(stringResource(badge.rule), Type.label, palette.textSub, align = TextAlign.Center)
+                        val status = when {
+                            got != null -> shortDate(got.at.toLocalDate())
+                            progress != null -> stringResource(progress.format, progress.done, progress.goal)
+                            else -> null
+                        }
+                        if (status != null) Text(status, Type.labelStrong, if (got != null) palette.accent else palette.text, align = TextAlign.Center)
+                    }
                 }
-                val status = when {
-                    got != null -> recordDate(got.at.toLocalDate())
-                    badge == Badge.RAIN_DRIVER -> stringResource(R.string.badge_progress_km, wiperKm, (Rules.RAIN_DRIVER_M / 1000).toInt())
-                    else -> stringResource(R.string.badge_locked)
-                }
-                Text(status, Type.label, if (got != null) palette.text else palette.textSub)
             }
         }
+    }
+}
+
+/** 배지 메달. 받으면 파란 빛 위에 흰 그림, 받기 전이면 유리 위에 흐린 그림입니다. */
+@Composable
+private fun Medal(badge: Badge, earned: Boolean) {
+    val palette = LocalPalette.current
+    Box(Modifier.size(MEDAL).then(if (earned) Modifier.lit(palette, CircleShape) else Modifier.glass(palette, CircleShape)), contentAlignment = Alignment.Center) {
+        Image(painterResource(badge.icon), null, Modifier.size(MEDAL / 2), colorFilter = ColorFilter.tint(if (earned) palette.onAccent else palette.textSub))
     }
 }
 
@@ -177,7 +177,7 @@ internal fun RecapPage() {
         },
         right = {
             val rows = listOf(
-                R.string.recap_new_regions to stringResource(R.string.unit_count, recap.newRegions),
+                R.string.recap_stamps to stringResource(R.string.unit_count, recap.newStamps),
                 R.string.recap_top_region to (recap.topRegion?.let { stampName(it) } ?: dash),
                 R.string.recap_rainy_days to stringResource(R.string.unit_days, recap.rainyDays),
                 R.string.recap_night to stringResource(R.string.unit_percent, recap.nightPercent),
@@ -194,50 +194,35 @@ internal fun RecapPage() {
 }
 
 @Composable
-internal fun SettingsPage() {
+internal fun DemoPage() {
     val palette = LocalPalette.current
-    val settings = Store.settings
-    var clearStep by rememberSaveable { mutableStateOf(0) }
-    TwoColumns(
-        left = {
-            SectionHeader(stringResource(R.string.settings_title), null)
-            Box(Modifier.glass(palette).padding(horizontal = Space.l)) {
-                SwitchRow(stringResource(R.string.settings_voice), stringResource(R.string.settings_voice_detail), settings.voice) {
-                    Store.update(settings.copy(voice = it))
+    var clearStep by rememberSaveable { mutableIntStateOf(0) }
+    Column(Modifier.widthIn(max = 1200.dp).verticalScroll(rememberScrollState())) {
+        Panel(Rules.routes) { route ->
+            val playing = Drive.replaying == route
+            Row(Modifier.fillMaxWidth().heightIn(min = 120.dp).padding(vertical = Space.s), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f).padding(end = Space.m)) {
+                    Text(stringResource(route.name), Type.bodyStrong, palette.text)
+                    Text(stringResource(route.detail), Type.label, palette.textSub)
                 }
+                ActionButton(stringResource(if (playing) R.string.demo_stop else R.string.demo_start), { if (playing) Drive.stopReplay() else Drive.replay(route) }, primary = playing)
             }
-            Spacer(Modifier.height(Space.l))
-            Text(stringResource(R.string.settings_privacy), Type.body, palette.textSub)
-            Spacer(Modifier.height(Space.m))
-            val label = when (clearStep) {
-                0 -> R.string.settings_clear
-                1 -> R.string.settings_clear_confirm
-                else -> R.string.settings_cleared
-            }
-            ActionButton(stringResource(label), {
-                if (clearStep == 1) Store.clear()
-                clearStep = (clearStep + 1).coerceAtMost(2)
-            })
-            Spacer(Modifier.height(Space.xl))
-            SectionHeader(stringResource(R.string.info_title), null)
-            Text(stringResource(R.string.info_boundary), Type.label, palette.textSub, Modifier.padding(vertical = Space.m))
-        },
-        right = {
-            SectionHeader(stringResource(R.string.demo_title), null)
-            Text(stringResource(R.string.demo_detail), Type.label, palette.textSub, Modifier.padding(vertical = Space.s))
-            Panel(Rules.routes) { route ->
-                val playing = Drive.replaying == route
-                Row(Modifier.fillMaxWidth().heightIn(min = 120.dp).padding(vertical = Space.s), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f).padding(end = Space.m)) {
-                        Text(stringResource(route.name), Type.bodyStrong, palette.text)
-                        Text(stringResource(route.detail), Type.label, palette.textSub)
-                    }
-                    ActionButton(stringResource(if (playing) R.string.demo_stop else R.string.demo_start), { if (playing) Drive.stopReplay() else Drive.replay(route) }, primary = playing)
-                }
-            }
-        },
-    )
+        }
+        Spacer(Modifier.height(Space.l))
+        val label = when (clearStep) {
+            0 -> R.string.demo_clear
+            1 -> R.string.demo_clear_confirm
+            else -> R.string.demo_cleared
+        }
+        ActionButton(stringResource(label), {
+            if (clearStep == 1) Store.clear()
+            clearStep = (clearStep + 1).coerceAtMost(2)
+        })
+        Spacer(Modifier.height(Space.xl))
+        Text(stringResource(R.string.info_boundary), Type.label, palette.textSub)
+    }
 }
 
-private const val RECENT_STAMPS = 6
+private const val BADGE_COLUMNS = 4
+private val MEDAL = 96.dp
 private val MAP_LON_SCALE = cos(Math.toRadians(36.0))

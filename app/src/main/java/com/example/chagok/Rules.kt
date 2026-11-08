@@ -1,5 +1,6 @@
 package com.example.chagok
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -19,13 +20,23 @@ data class Point(val lat: Double, val lon: Double)
 
 data class Route(@StringRes val name: Int, @StringRes val detail: Int, val waypoints: List<Point>)
 
-enum class Badge(@StringRes val title: Int, @StringRes val rule: Int) {
-    COAST_WIND(R.string.badge_coast_wind, R.string.badge_coast_wind_rule),
-    RAIN_DRIVER(R.string.badge_rain_driver, R.string.badge_rain_driver_rule),
-    NIGHT_PASS(R.string.badge_night_pass, R.string.badge_night_pass_rule),
-    SUNRISE_START(R.string.badge_sunrise_start, R.string.badge_sunrise_start_rule),
-    SUNSET_DRIVE(R.string.badge_sunset_drive, R.string.badge_sunset_drive_rule),
+enum class Badge(@StringRes val title: Int, @StringRes val rule: Int, @DrawableRes val icon: Int) {
+    COAST_WIND(R.string.badge_coast_wind, R.string.badge_coast_wind_rule, R.drawable.badge_coast_wind),
+    NIGHT_PASS(R.string.badge_night_pass, R.string.badge_night_pass_rule, R.drawable.badge_night_pass),
+    SUNRISE_START(R.string.badge_sunrise_start, R.string.badge_sunrise_start_rule, R.drawable.badge_sunrise_start),
+    SUNSET_DRIVE(R.string.badge_sunset_drive, R.string.badge_sunset_drive_rule, R.drawable.badge_sunset_drive),
+    SHOWER(R.string.badge_shower, R.string.badge_shower_rule, R.drawable.badge_shower),
+    NIGHT_RUN(R.string.badge_night_run, R.string.badge_night_run_rule, R.drawable.badge_night_run),
+    LONG_DRIVE(R.string.badge_long_drive, R.string.badge_long_drive_rule, R.drawable.badge_long_drive),
+    RAIN_DRIVER(R.string.badge_rain_driver, R.string.badge_rain_driver_rule, R.drawable.badge_rain_driver),
+    THOUSAND_KM(R.string.badge_thousand_km, R.string.badge_thousand_km_rule, R.drawable.badge_thousand_km),
+    TEN_REGIONS(R.string.badge_ten_regions, R.string.badge_ten_regions_rule, R.drawable.badge_ten_regions),
+    COAST_SPOTS(R.string.badge_coast_spots, R.string.badge_coast_spots_rule, R.drawable.badge_coast_spots),
+    PASS_SPOTS(R.string.badge_pass_spots, R.string.badge_pass_spots_rule, R.drawable.badge_pass_spots),
 }
+
+/** 여러 주행에 걸쳐 모으는 배지의 진행도. 단위는 km 또는 곳입니다. */
+data class Progress(val done: Int, val goal: Int, @StringRes val format: Int)
 
 data class Trip(
     val id: String,
@@ -50,7 +61,7 @@ data class Reveal(val stamps: List<Stamp>, val badges: List<Earned>)
 
 data class Recap(
     val distanceM: Double,
-    val newRegions: Int,
+    val newStamps: Int,
     val topRegion: String?,
     val rainyDays: Int,
     val nightPercent: Int,
@@ -99,7 +110,13 @@ class Recorder(private val id: String, private val startedAt: LocalDateTime, pri
 object Rules {
 
     const val REGION_STAMP_M = 500.0
-    const val RAIN_DRIVER_M = 100_000.0
+    const val SHOWER_M = 10_000.0
+    const val NIGHT_RUN_M = 30_000.0
+    const val LONG_DRIVE_M = 100_000.0
+    private const val RAIN_DRIVER_KM = 100
+    private const val THOUSAND_KM = 1_000
+    private const val TEN_REGIONS = 10
+    private const val SPOTS_GOAL = 3
     const val COAST_WINDOW_M = 1_000.0
     const val SPOT_RADIUS_M = 300f
     const val SUNSET_WINDOW_MINUTES = 15L
@@ -156,17 +173,29 @@ object Rules {
             .filter { it !in stamped }
             .map { Stamp(it, at) }
         val owned = earned.map { it.badge }.toSet()
-        val wiperTotal = history.sumOf { it.wiperM } + trip.wiperM
         val newBadges = Badge.entries.filter { badge ->
             badge !in owned && when (badge) {
                 Badge.COAST_WIND -> trip.coastWindowM >= COAST_WINDOW_M
-                Badge.RAIN_DRIVER -> wiperTotal >= RAIN_DRIVER_M
                 Badge.NIGHT_PASS -> trip.litPasses.isNotEmpty()
                 Badge.SUNRISE_START -> trip.sunrise
                 Badge.SUNSET_DRIVE -> trip.sunset
+                Badge.SHOWER -> trip.wiperM >= SHOWER_M
+                Badge.NIGHT_RUN -> trip.lowBeamM >= NIGHT_RUN_M
+                Badge.LONG_DRIVE -> trip.distanceM >= LONG_DRIVE_M
+                else -> progress(badge, history + trip, stamps + newStamps)!!.let { it.done >= it.goal }
             }
         }.map { Earned(it, at) }
         return Reveal(newStamps, newBadges)
+    }
+
+    /** 여러 주행에 걸쳐 모으는 배지만 진행도가 있습니다. */
+    fun progress(badge: Badge, trips: List<Trip>, stamps: List<Stamp>): Progress? = when (badge) {
+        Badge.RAIN_DRIVER -> Progress((trips.sumOf { it.wiperM } / 1000).toInt(), RAIN_DRIVER_KM, R.string.progress_km)
+        Badge.THOUSAND_KM -> Progress((trips.sumOf { it.distanceM } / 1000).toInt(), THOUSAND_KM, R.string.progress_km)
+        Badge.TEN_REGIONS -> Progress(stamps.count { spot(it.code) == null }, TEN_REGIONS, R.string.progress_places)
+        Badge.COAST_SPOTS -> Progress(stamps.count { spot(it.code)?.kind == SpotKind.COAST }, SPOTS_GOAL, R.string.progress_places)
+        Badge.PASS_SPOTS -> Progress(stamps.count { spot(it.code)?.kind == SpotKind.PASS }, SPOTS_GOAL, R.string.progress_places)
+        else -> null
     }
 
     fun recap(month: YearMonth, trips: List<Trip>, stamps: List<Stamp>, earned: List<Earned>): Recap {
@@ -175,7 +204,7 @@ object Rules {
         val regions = inMonth.flatMap { it.regionM.entries }.groupBy({ it.key }, { it.value }).mapValues { it.value.sum() }
         return Recap(
             distanceM = distance,
-            newRegions = stamps.count { YearMonth.from(it.at) == month && spot(it.code) == null },
+            newStamps = stamps.count { YearMonth.from(it.at) == month },
             topRegion = regions.maxByOrNull { it.value }?.key,
             rainyDays = inMonth.filter { it.wiperM > 0 }.map { it.endedAt.toLocalDate() }.distinct().size,
             nightPercent = if (distance > 0) (inMonth.sumOf { it.lowBeamM } * 100 / distance).toInt() else 0,
