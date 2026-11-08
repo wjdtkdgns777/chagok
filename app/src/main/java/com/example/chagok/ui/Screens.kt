@@ -33,12 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.toggleableState
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.chagok.Drive
@@ -47,17 +42,11 @@ import com.example.chagok.Reveal
 import com.example.chagok.Rules
 import com.example.chagok.Store
 import java.time.LocalDate
-import java.time.format.TextStyle
-import java.util.Locale
 
 internal val wide = 1100.dp
 
 @Composable
 internal fun shortDate(date: LocalDate) = stringResource(R.string.stamp_date, date.monthValue, date.dayOfMonth)
-
-@Composable
-internal fun recordDate(date: LocalDate) =
-    stringResource(R.string.record_date, date.year, date.monthValue, date.dayOfMonth, date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.KOREAN))
 
 @Composable
 internal fun stampName(code: String): String {
@@ -101,12 +90,7 @@ private fun ConsentScreen(onAgree: () -> Unit, onLater: () -> Unit) {
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Space.xxl), contentAlignment = Alignment.Center) {
         Column(Modifier.widthIn(max = 1040.dp)) {
             Text(stringResource(R.string.consent_title), Type.headline, palette.text)
-            Spacer(Modifier.height(Space.m))
-            listOf(R.string.consent_line_1, R.string.consent_line_2, R.string.consent_line_3).forEach {
-                Text(stringResource(it), Type.body, palette.textSub, Modifier.padding(vertical = Space.xs))
-            }
             Spacer(Modifier.height(Space.xl))
-            SectionHeader(stringResource(R.string.consent_data_title), null)
             Panel(
                 listOf(
                     R.string.consent_location to R.string.consent_location_detail,
@@ -166,7 +150,7 @@ private fun RevealScreen(reveal: Reveal, onClose: () -> Unit) {
 private fun ParkedScreen() {
     val palette = LocalPalette.current
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    val tabs = listOf(R.string.tab_map, R.string.tab_badges, R.string.tab_recap, R.string.tab_settings)
+    val tabs = listOf(R.string.tab_map, R.string.tab_badges, R.string.tab_recap, R.string.tab_demo)
     Column(Modifier.fillMaxSize().padding(horizontal = Space.xxl, vertical = Space.xl)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.app_name), Type.headline.copy(brush = palette.accentBrush), Color.Unspecified, Modifier.weight(1f))
@@ -182,7 +166,7 @@ private fun ParkedScreen() {
                 0 -> MapPage()
                 1 -> BadgesPage()
                 2 -> RecapPage()
-                else -> SettingsPage()
+                else -> DemoPage()
             }
         }
     }
@@ -232,24 +216,5 @@ internal fun SectionHeader(title: String, trailing: String?) {
     Row(Modifier.fillMaxWidth().padding(top = Space.s, bottom = Space.xs), verticalAlignment = Alignment.Bottom) {
         Text(title, Type.labelStrong, palette.text, Modifier.weight(1f))
         if (trailing != null) Text(trailing, Type.label, palette.textSub)
-    }
-}
-
-@Composable
-internal fun SwitchRow(title: String, detail: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    val palette = LocalPalette.current
-    Pressable(
-        onClick = { onChange(!checked) },
-        modifier = Modifier.fillMaxWidth().semantics { toggleableState = ToggleableState(checked) },
-        shape = RectangleShape,
-        role = Role.Switch,
-    ) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 120.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(title, Type.bodyStrong, palette.text)
-                Text(detail, Type.label, palette.textSub)
-            }
-            Toggle(checked)
-        }
     }
 }

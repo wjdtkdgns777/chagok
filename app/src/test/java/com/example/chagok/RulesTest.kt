@@ -96,6 +96,22 @@ class RulesTest {
     }
 
     @Test
+    fun singleTripBadgesCountOneDrive() {
+        assertTrue(judge(trip(wiperM = 9_999.0, lowBeamM = 29_999.0, distanceM = 99_999.0)).badges.isEmpty())
+        val badges = judge(trip(wiperM = 10_000.0, lowBeamM = 30_000.0, distanceM = 100_000.0)).badges.map { it.badge }
+        assertEquals(listOf(Badge.SHOWER, Badge.NIGHT_RUN, Badge.LONG_DRIVE), badges)
+    }
+
+    @Test
+    fun collectionBadgesCountThisTripStamps() {
+        val coasts = Rules.spots.filter { it.kind == SpotKind.COAST }
+        val regions = (1..9).map { Stamp("1101$it", noon.minusDays(1)) } + coasts.take(2).map { Stamp(it.code, noon.minusDays(1)) }
+        assertEquals(Progress(9, 10, R.string.progress_places), Rules.progress(Badge.TEN_REGIONS, emptyList(), regions))
+        val trip = trip(regionM = mapOf("32030" to 1_000.0)).copy(spots = listOf(coasts[2].code))
+        assertEquals(listOf(Badge.TEN_REGIONS, Badge.COAST_SPOTS), judge(trip, stamps = regions).badges.map { it.badge })
+    }
+
+    @Test
     fun ownedBadgeIsNotGivenAgain() {
         val trip = recorder(sunrise = true).snapshot(noon)
         assertEquals(listOf(Badge.SUNRISE_START), judge(trip).badges.map { it.badge })
@@ -137,7 +153,7 @@ class RulesTest {
         val earned = listOf(Earned(Badge.RAIN_DRIVER, LocalDateTime.of(2026, 10, 31, 23, 50)), Earned(Badge.NIGHT_PASS, LocalDateTime.of(2026, 11, 30, 23, 59)))
         val recap = Rules.recap(november, trips, stamps, earned)
         assertEquals(12_000.0, recap.distanceM, 0.1)
-        assertEquals(2, recap.newRegions)
+        assertEquals(3, recap.newStamps)
         assertEquals("32030", recap.topRegion)
         assertEquals(1, recap.rainyDays)
         assertEquals(25, recap.nightPercent)

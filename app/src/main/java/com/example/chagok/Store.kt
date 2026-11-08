@@ -14,7 +14,7 @@ import org.json.JSONObject
 import java.io.File
 import java.time.LocalDateTime
 
-data class Settings(val consented: Boolean = false, val voice: Boolean = true)
+data class Settings(val consented: Boolean = false)
 
 object Store {
 
@@ -35,7 +35,7 @@ object Store {
         prefs = context.getSharedPreferences(NAME, Context.MODE_PRIVATE)
         file = AtomicFile(File(context.filesDir, "$NAME.json"))
         openFile = AtomicFile(File(context.filesDir, "$OPEN.json"))
-        settings = Settings(prefs.getBoolean(CONSENTED, false), prefs.getBoolean(VOICE, true))
+        settings = Settings(prefs.getBoolean(CONSENTED, false))
         if (file.baseFile.exists()) {
             try {
                 val root = JSONObject(String(file.readFully()))
@@ -58,7 +58,7 @@ object Store {
 
     fun update(next: Settings) {
         settings = next
-        prefs.edit().putBoolean(CONSENTED, next.consented).putBoolean(VOICE, next.voice).apply()
+        prefs.edit().putBoolean(CONSENTED, next.consented).apply()
     }
 
     fun openTrip(): Trip? = if (openFile.baseFile.exists()) runCatching { trip(JSONObject(String(openFile.readFully()))) }.getOrNull() else null
@@ -149,5 +149,4 @@ object Store {
     private const val STAMPS = "stamps"
     private const val EARNED = "earned"
     private const val CONSENTED = "consented"
-    private const val VOICE = "voice"
 }

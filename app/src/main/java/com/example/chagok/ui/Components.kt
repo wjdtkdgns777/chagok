@@ -47,7 +47,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -215,28 +214,6 @@ fun Segments(items: List<String>, selected: Int, onSelect: (Int) -> Unit, modifi
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Toggle(checked: Boolean, modifier: Modifier = Modifier) {
-    val palette = LocalPalette.current
-    val thumb by animateDpAsState(if (checked) 44.dp else 0.dp, Motion.slide, label = "toggleThumb")
-    val on by animateFloatAsState(if (checked) 1f else 0f, tween(Motion.SHORT), label = "toggleOn")
-    Box(
-        modifier
-            .size(width = 100.dp, height = 56.dp)
-            .glass(palette, CircleShape)
-            .drawBehind { drawRoundRect(palette.accentBrush, cornerRadius = CornerRadius(size.height / 2), alpha = on) }
-            .padding(6.dp),
-    ) {
-        Box(
-            Modifier
-                .offset(x = thumb)
-                .size(44.dp)
-                .shadow(4.dp, CircleShape)
-                .background(palette.onAccent, CircleShape),
-        )
     }
 }
 
