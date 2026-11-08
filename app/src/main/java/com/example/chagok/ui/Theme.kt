@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.example.chagok.Level
 
 /** 밤 드라이브 색. 바탕은 어둡고, 강조는 밝은 파랑에서 짙은 파랑으로 흐르는 빛 하나만 씁니다. */
 @Immutable
@@ -70,6 +71,13 @@ private val LightPalette = Palette(
     onAccent = Color(0xFFFFFFFF),
     touchLight = Color(0x332F6BFF),
 )
+
+/** 동, 은, 금 등급 색. 밝은 바탕과 어두운 바탕 모두에서 읽히는 중간 밝기입니다. */
+fun levelColor(level: Level) = when (level) {
+    Level.BRONZE -> Color(0xFFB4723E)
+    Level.SILVER -> Color(0xFF8A94A3)
+    Level.GOLD -> Color(0xFFC9971A)
+}
 
 /** 차 화면에서 읽히도록 크기를 키웠습니다. 큰 숫자는 자간을 좁힙니다. */
 object Type {

@@ -1,13 +1,11 @@
 <resources>
     <string name="app_name">차곡</string>
 
-    <string name="consent_title">달린 길이 도장으로 쌓입니다</string>
+    <string name="consent_title">차곡은 아래와 같은 권한이 필요합니다</string>
     <string name="consent_location">위치</string>
-    <string name="consent_location_detail">지난 시군구를 판정하고 차 안에만 저장합니다</string>
+    <string name="consent_location_detail">지난 시군구와 명소 판정에 사용</string>
     <string name="consent_vehicle">차량 신호</string>
-    <string name="consent_vehicle_detail">기어, 와이퍼, 창문, 전조등을 읽기만 합니다</string>
-    <string name="consent_quiet">주행 중</string>
-    <string name="consent_quiet_detail">화면과 소리를 내지 않습니다</string>
+    <string name="consent_vehicle_detail">와이퍼와 전조등으로 비, 밤 판정에 사용</string>
     <string name="consent_agree">동의하고 시작</string>
     <string name="consent_later">나중에</string>
 
@@ -23,43 +21,71 @@
     <string name="map_loading">지도를 불러오고 있습니다</string>
     <string name="map_recent">도장 기록</string>
     <string name="map_empty">아직 도장이 없습니다</string>
-    <string name="stamp_date">%1$d/%2$d</string>
+    <string name="date_short">%1$d월 %2$d일</string>
+    <string name="visits">%1$d번 지남</string>
+    <string name="nearby_title">근처 안 찍은 명소</string>
+    <string name="nearby_detail">%1$s %2$dkm</string>
+    <string name="nearby_guide">내비 안내</string>
+
+    <string name="moment_day">낮</string>
+    <string name="moment_rain">비</string>
+    <string name="moment_night">밤</string>
+    <string name="moment_dawn">새벽</string>
+    <string name="moment_sunset">노을</string>
+    <string name="named_day">낮의 %1$s</string>
+    <string name="named_rain">비 오는 %1$s</string>
+    <string name="named_night">밤의 %1$s</string>
+    <string name="named_dawn">새벽의 %1$s</string>
+    <string name="named_sunset">노을 진 %1$s</string>
+    <string name="season_spring">봄</string>
+    <string name="season_summer">여름</string>
+    <string name="season_autumn">가을</string>
+    <string name="season_winter">겨울</string>
+    <string name="level_bronze">동</string>
+    <string name="level_silver">은</string>
+    <string name="level_gold">금</string>
+
+    <string name="book_back">도장 기록으로</string>
 
     <string name="badges_title">모은 배지</string>
     <string name="badges_count">%1$d / %2$d개</string>
     <string name="progress_km">%1$,d / %2$,dkm</string>
     <string name="progress_places">%1$d / %2$d곳</string>
-    <string name="badge_coast_wind">해안도로 바람</string>
-    <string name="badge_coast_wind_rule">창문 열고 해안 명소 1km</string>
-    <string name="badge_night_pass">밤의 고개</string>
-    <string name="badge_night_pass_rule">전조등 켜고 고개 명소 끝까지</string>
-    <string name="badge_sunrise_start">해돋이 출발</string>
-    <string name="badge_sunrise_start_rule">해 뜨기 전 1시간 안에 출발</string>
-    <string name="badge_sunset_drive">노을 드라이브</string>
-    <string name="badge_sunset_drive_rule">해 지는 시각 앞뒤 15분 주행</string>
-    <string name="badge_shower">소나기</string>
-    <string name="badge_shower_rule">와이퍼 켜고 한 번에 10km</string>
-    <string name="badge_night_run">밤길</string>
-    <string name="badge_night_run_rule">전조등 켜고 한 번에 30km</string>
-    <string name="badge_long_drive">먼 길</string>
-    <string name="badge_long_drive_rule">한 번에 100km</string>
+    <string name="progress_kinds">%1$d / %2$d가지</string>
+    <string name="progress_cells">%1$d / %2$d칸</string>
+    <string name="progress_times">%1$d / %2$d번</string>
+    <string name="badge_ten_regions">열 곳의 방문자</string>
+    <string name="badge_ten_regions_rule">서로 다른 시군구 10곳</string>
+    <string name="badge_fifty_regions">전국 여행자</string>
+    <string name="badge_fifty_regions_rule">서로 다른 시군구 50곳</string>
+    <string name="badge_gangwon">강원 완주</string>
+    <string name="badge_gangwon_rule">강원 시군구 18곳 모두</string>
+    <string name="badge_thousand_km">1,000km 달성</string>
+    <string name="badge_thousand_km_rule">누적 주행 1,000km</string>
     <string name="badge_rain_driver">빗길 드라이버</string>
-    <string name="badge_rain_driver_rule">와이퍼 켜고 모두 100km</string>
-    <string name="badge_thousand_km">천 킬로</string>
-    <string name="badge_thousand_km_rule">모두 1,000km</string>
-    <string name="badge_ten_regions">열 고을</string>
-    <string name="badge_ten_regions_rule">시군구 도장 10곳</string>
-    <string name="badge_coast_spots">해안선</string>
-    <string name="badge_coast_spots_rule">해안 명소 도장 3곳</string>
-    <string name="badge_pass_spots">고갯마루</string>
-    <string name="badge_pass_spots_rule">고개 명소 도장 3곳</string>
+    <string name="badge_rain_driver_rule">와이퍼 켜고 누적 100km</string>
+    <string name="badge_coast_spots">해안길 탐험가</string>
+    <string name="badge_coast_spots_rule">해안 명소 3곳 지나기</string>
+    <string name="badge_pass_spots">고갯길 탐험가</string>
+    <string name="badge_pass_spots_rule">고개 명소 3곳 지나기</string>
+    <string name="badge_limited">한정 도장</string>
+    <string name="badge_limited_rule">기간 한정 명소 1곳</string>
+    <string name="badge_all_moments">하루의 모든 얼굴</string>
+    <string name="badge_all_moments_rule">한 곳에서 순간 5가지</string>
+    <string name="badge_four_seasons">사계절</string>
+    <string name="badge_four_seasons_rule">한 곳에서 계절 4가지</string>
+    <string name="badge_full_book">도장첩 완성</string>
+    <string name="badge_full_book_rule">한 곳의 20칸 모두</string>
+    <string name="badge_regular">단골</string>
+    <string name="badge_regular_rule">한 곳을 20번 지나 금 등급</string>
 
-    <string name="reveal_title">이번 주행에서 모은 것</string>
-    <string name="reveal_summary">도장 %1$d곳, 배지 %2$d개</string>
-    <string name="reveal_stamp">도장</string>
-    <string name="reveal_badge">배지</string>
+    <string name="reveal_new">새 도장 %1$d장</string>
+    <string name="reveal_again">다시 지난 길</string>
+    <string name="reveal_level">%1$s %2$s 등급</string>
+    <string name="reveal_kind_level">등급</string>
+    <string name="reveal_kind_badge">배지</string>
     <string name="reveal_close">확인</string>
-    <string name="say_reveal">도장 %1$d곳, 배지 %2$d개를 모았습니다.</string>
+    <string name="say_reveal">새 도장 %1$d장을 모았습니다.</string>
 
     <string name="recap_title">%1$d년 %2$d월 결산</string>
     <string name="recap_previous">이전 달</string>
@@ -68,12 +94,12 @@
     <string name="unit_km">km</string>
     <string name="recap_stamps">모은 도장</string>
     <string name="recap_top_region">가장 많이 달린 곳</string>
-    <string name="recap_rainy_days">와이퍼 켠 날</string>
-    <string name="recap_night">전조등 켠 거리</string>
+    <string name="recap_rainy_days">비 온 날</string>
+    <string name="recap_night">밤에 달린 거리</string>
     <string name="recap_badges">모은 배지</string>
-    <string name="unit_count">%1$d곳</string>
+    <string name="unit_stamps">%1$d장</string>
     <string name="unit_days">%1$d일</string>
-    <string name="unit_percent">%1$d%%</string>
+    <string name="unit_distance">%1$,dkm</string>
     <string name="dash">-</string>
 
     <string name="demo_clear">기록 지우기</string>
@@ -81,13 +107,19 @@
     <string name="demo_cleared">지웠습니다</string>
     <string name="demo_start">재생</string>
     <string name="demo_stop">멈춤</string>
-    <string name="info_boundary">지도: 통계청 SGIS, vuski/admdongkor (CC BY 4.0)</string>
+    <string name="demo_samples">지난 기록 채우기</string>
+    <string name="demo_samples_done">채웠습니다</string>
 
     <string name="route_gangneung_coast">강릉 해안도로</string>
-    <string name="route_gangneung_coast_detail">경포에서 사천진까지 7km, 창문 열고</string>
-    <string name="route_daegwallyeong">대관령 밤 고갯길</string>
-    <string name="route_daegwallyeong_detail">횡계에서 성산까지 12km, 전조등 켜고</string>
+    <string name="route_gangneung_coast_detail">경포에서 사천진까지 7km</string>
+    <string name="route_daegwallyeong">대관령 옛길</string>
+    <string name="route_daegwallyeong_detail">횡계에서 성산까지 12km</string>
 
+    <string name="spot_coast">해안도로</string>
+    <string name="spot_pass">고갯길</string>
+    <string name="spot_blossom">벚꽃길, 4월에만</string>
+    <string name="spot_foliage">단풍길, 10월 중순부터 11월 중순까지</string>
+    <string name="spot_sunrise">해돋이, 1월 1일에만</string>
     <string name="spot_gangneung_coast">강릉 해안도로</string>
     <string name="spot_daegwallyeong">대관령 옛길</string>
     <string name="spot_heonhwa">헌화로</string>
@@ -96,6 +128,9 @@
     <string name="spot_dalmaji">달맞이길</string>
     <string name="spot_aewol">애월 해안도로</string>
     <string name="spot_mulmi">물미해안도로</string>
+    <string name="spot_yunjungro">여의도 윤중로</string>
+    <string name="spot_naejangsan">내장산 단풍길</string>
+    <string name="spot_homigot">호미곶</string>
 
     <string name="notice_channel">주행 기록</string>
     <string name="notice_text">달린 시군구를 기록하고 있습니다</string>
