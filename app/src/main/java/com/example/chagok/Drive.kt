@@ -7,6 +7,8 @@ import ai.pleos.playground.location.fused.model.LocationData
 import ai.pleos.playground.location.fused.model.ProximityAlertEvent
 import ai.pleos.playground.location.fused.model.ProximityAlertRequest
 import ai.pleos.playground.location.fused.model.ProximityTransition
+import ai.pleos.playground.navi.data.RouteInfo
+import ai.pleos.playground.navi.helper.NaviHelper
 import ai.pleos.playground.vehicle.Vehicle
 import ai.pleos.playground.vehicle.api.model.area.WindowArea
 import ai.pleos.playground.vehicle.constant.area.WindowValue
@@ -15,7 +17,6 @@ import ai.pleos.playground.vehicle.constant.control.VehicleGear
 import ai.pleos.playground.vehicle.constant.control.WiperState
 import ai.pleos.playground.vehicle.listener.GearSelectionListener
 import ai.pleos.playground.vehicle.listener.LightStateListener
-import ai.pleos.playground.vehicle.listener.WindowPositionListener
 import ai.pleos.playground.vehicle.listener.WiperStateListener
 import android.content.Context
 import android.content.pm.PackageManager
@@ -27,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
 
 object Drive {
 
@@ -36,19 +38,22 @@ object Drive {
     var replaying by mutableStateOf<Route?>(null)
         private set
 
+    /** 정차 중 근처 명소를 찾을 때 쓰는 위치. 화면이 너무 자주 바뀌지 않게 조금 움직이면 그대로 둡니다. */
+    var here by mutableStateOf<Point?>(null)
+        private set
+
     private lateinit var context: Context
     private lateinit var vehicle: Vehicle
     private lateinit var fused: FusedLocation
+    private lateinit var navi: NaviHelper
     private lateinit var voice: Voice
     private val main = Handler(Looper.getMainLooper())
     private val windshield = WindowArea(WindowValue.FRONT_WINDSHIELD)
-    private val driverWindow = WindowArea(WindowValue.ROW_1_LEFT)
     private val zone get() = ZoneId.systemDefault()
 
     private var started = false
     private var locating = false
     private var wiper = false
-    private var window = false
     private var lowBeam = false
     private var position: Point? = null
     private var recorder: Recorder? = null
@@ -68,8 +73,10 @@ object Drive {
         vehicle.initialize()
         vehicle.getGear().registerGearSelection(gearListener)
         vehicle.getWiper().registerWiperState(windshield, wiperListener)
-        vehicle.getWindow().registerWindowPosition(driverWindow, windowListener)
         vehicle.getLight().registerLowBeamLightState(lowBeamListener)
+
+        navi = NaviHelper(context)
+        navi.initialize()
 
         fused = FusedLocation(context)
         fused.initialize()
@@ -93,9 +100,9 @@ object Drive {
         main.removeCallbacks(showReveal)
         vehicle.getGear().unregisterGearSelection(gearListener)
         vehicle.getWiper().unregisterWiperState(windshield, wiperListener)
-        vehicle.getWindow().unregisterWindowPosition(driverWindow, windowListener)
         vehicle.getLight().unregisterLowBeamLightState(lowBeamListener)
         vehicle.release()
+        navi.release()
         if (locating) {
             fused.unregisterFusedLocationCallback(locationListener)
             alertIds.forEach(fused::removeProximityAlert)
@@ -124,6 +131,11 @@ object Drive {
         }
         replayStep = step
         main.post(step)
+    }
+
+    /** 명소 시작점을 내비 목적지로 보냅니다. */
+    fun guide(spot: Spot) {
+        navi.requestRoute(RouteInfo(spot.start.lat, spot.start.lon, poiName = context.getString(spot.name), poiId = spot.code, address = "", poiSubId = ""))
     }
 
     fun stopReplay() {
@@ -166,7 +178,7 @@ object Drive {
         main.removeCallbacks(showReveal)
         reveal = null
         val now = LocalDateTime.now()
-        recorder = Recorder("trip-${System.currentTimeMillis()}", now, position?.let { Rules.isSunriseStart(now, it, zone) } ?: false)
+        recorder = Recorder("trip-${System.currentTimeMillis()}", now)
     }
 
     private fun close() {
@@ -174,7 +186,7 @@ object Drive {
         recorder = null
         val result = Rules.judge(trip, Store.trips, Store.stamps, Store.earned)
         Store.add(trip, result)
-        if (result.stamps.isEmpty() && result.badges.isEmpty()) return
+        if (result.isEmpty) return
         pending = result
         main.postDelayed(showReveal, REVEAL_DELAY_MS)
     }
@@ -183,23 +195,26 @@ object Drive {
         val result = pending ?: return@Runnable
         pending = null
         reveal = result
-        voice.speak(context.getString(R.string.say_reveal, result.stamps.size, result.badges.size))
+        voice.speak(context.getString(R.string.say_reveal, result.stamps.size))
     }
 
     private fun onPosition(point: Point) {
         val previous = position
         position = point
+        if (here.let { it == null || Rules.distanceM(it, point) > HERE_STEP_M }) here = point
         val trip = recorder ?: return
         val meters = previous?.let { Rules.distanceM(it, point) } ?: return
         if (meters > MAX_STEP_M) return
         val region = Store.regions?.find(point.lat, point.lon)?.code
-        trip.move(meters, region, wiper, window, lowBeam, Rules.isNearSunset(LocalDateTime.now(), point, zone))
+        trip.move(meters, region, momentAt(point), wiper)
         Store.saveOpen(trip.snapshot(LocalDateTime.now()))
     }
 
     private fun onSpot(spot: Spot, atEnd: Boolean) {
-        recorder?.enter(spot, atEnd, lowBeam)
+        recorder?.enter(spot, atEnd, momentAt(position ?: spot.end))
     }
+
+    private fun momentAt(point: Point) = Rules.moment(ZonedDateTime.now(zone), point, wiper, lowBeam)
 
     private val locationListener = object : FusedLocationListener {
         override fun onChanged(location: LocationData?) {
@@ -225,14 +240,6 @@ object Drive {
         override fun onFailed(e: Exception) = fail("wiper", e)
     }
 
-    private val windowListener = object : WindowPositionListener {
-        override fun onWindowPositionUpdated(position: Int?) {
-            main.post { window = (position ?: 0) > 0 }
-        }
-
-        override fun onFailed(e: Exception) = fail("window", e)
-    }
-
     private val lowBeamListener = object : LightStateListener {
         override fun onLightStateUpdated(state: LightState?) {
             main.post { lowBeam = state == LightState.ON }
@@ -250,4 +257,5 @@ object Drive {
     private const val REVEAL_DELAY_MS = 3_000L
     private const val REPLAY_TICK_MS = 500L
     private const val MAX_STEP_M = 1_000.0
+    private const val HERE_STEP_M = 500.0
 }

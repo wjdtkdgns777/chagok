@@ -1,9 +1,10 @@
 package com.example.chagok
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.ZoneId
@@ -12,152 +13,168 @@ class RulesTest {
 
     private val noon = LocalDateTime.of(2026, 11, 5, 12, 0)
     private val coast = Rules.spots.first { it.kind == SpotKind.COAST }
-    private val pass = Rules.spots.first { it.kind == SpotKind.PASS }
+    private val blossom = Rules.spots.first { it.kind == SpotKind.BLOSSOM }
     private val seoul = ZoneId.of("Asia/Seoul")
     private val gangneung = Point(37.7519, 128.8761)
 
-    private fun recorder(sunrise: Boolean = false) = Recorder("t", noon.minusMinutes(30), sunrise)
+    private fun Recorder.drive(meters: Double, region: String? = "32030", moment: Moment = Moment.DAY, wiper: Boolean = false, steps: Int = 10) =
+        repeat(steps) { move(meters / steps, region, moment, wiper) }
 
-    private fun Recorder.drive(meters: Double, region: String? = "32030", wiper: Boolean = false, window: Boolean = false, lowBeam: Boolean = false, steps: Int = 10) =
-        repeat(steps) { move(meters / steps, region, wiper, window, lowBeam, false) }
+    private fun trip(id: String = "t", at: LocalDateTime = noon, places: Map<String, Map<Moment, Double>> = emptyMap(), wiperM: Double = 0.0, spots: Map<String, Moment> = emptyMap()) =
+        Trip(id, at.minusMinutes(30), at, places.values.sumOf { it.values.sum() }, places, wiperM, spots)
 
-    private fun trip(id: String = "t", at: LocalDateTime = noon, regionM: Map<String, Double> = emptyMap(), wiperM: Double = 0.0, lowBeamM: Double = 0.0, distanceM: Double = regionM.values.sum()) =
-        Trip(id, at.minusMinutes(30), at, distanceM, regionM, wiperM, lowBeamM, 0.0, emptyList(), emptyList(), false, false)
+    private fun day(code: String = "32030", meters: Double = 2_000.0) = mapOf(code to mapOf(Moment.DAY to meters))
 
     private fun judge(trip: Trip, history: List<Trip> = emptyList(), stamps: List<Stamp> = emptyList(), earned: List<Earned> = emptyList()) =
         Rules.judge(trip, history, stamps, earned)
 
     @Test
     fun regionStampNeeds500Meters() {
-        val short = recorder().apply { drive(499.0) }.snapshot(noon)
-        assertTrue(judge(short).stamps.isEmpty())
-        val long = recorder().apply { drive(520.0) }.snapshot(noon)
-        assertEquals(listOf("32030"), judge(long).stamps.map { it.code })
+        assertTrue(judge(Recorder("t", noon).apply { drive(499.0) }.snapshot(noon)).stamps.isEmpty())
+        val stamps = judge(Recorder("t", noon).apply { drive(520.0) }.snapshot(noon)).stamps
+        assertEquals(listOf(Stamp("32030", Moment.DAY, Season.AUTUMN, noon)), stamps)
     }
 
     @Test
-    fun revisitedRegionIsNotStampedAgain() {
-        val trip = recorder().apply { drive(2_000.0) }.snapshot(noon)
-        assertTrue(judge(trip, stamps = listOf(Stamp("32030", noon.minusDays(3)))).stamps.isEmpty())
+    fun regionTakesTheLongestMoment() {
+        val trip = Recorder("t", noon).apply {
+            drive(300.0, moment = Moment.DAY)
+            drive(700.0, moment = Moment.RAIN, wiper = true)
+        }.snapshot(noon)
+        assertEquals(listOf(Moment.RAIN), judge(trip).stamps.map { it.moment })
+        assertEquals(700.0, trip.wiperM, 0.1)
+    }
+
+    @Test
+    fun samePlaceInAnotherMomentOrSeasonIsANewStamp() {
+        val owned = listOf(Stamp("32030", Moment.DAY, Season.AUTUMN, noon.minusDays(3)))
+        assertTrue(judge(trip(places = day()), stamps = owned).stamps.isEmpty())
+        val rain = trip(places = mapOf("32030" to mapOf(Moment.RAIN to 2_000.0)))
+        assertEquals(listOf(Moment.RAIN), judge(rain, stamps = owned).stamps.map { it.moment })
+        val winter = trip(at = LocalDateTime.of(2026, 12, 20, 12, 0), places = day())
+        assertEquals(listOf(Season.WINTER), judge(winter, stamps = owned).stamps.map { it.season })
     }
 
     @Test
     fun spotStampNeedsStartThenEnd() {
-        val inOrder = recorder().apply {
-            enter(coast, atEnd = false, lowBeam = false)
+        val inOrder = Recorder("t", noon).apply {
+            enter(coast, atEnd = false, moment = Moment.DAY)
             drive(100.0)
-            enter(coast, atEnd = true, lowBeam = false)
+            enter(coast, atEnd = true, moment = Moment.SUNSET)
         }.snapshot(noon)
-        assertTrue(coast.code in judge(inOrder).stamps.map { it.code })
-        val reversed = recorder().apply {
-            enter(coast, atEnd = true, lowBeam = false)
-            enter(coast, atEnd = false, lowBeam = false)
+        assertEquals(Moment.SUNSET, judge(inOrder).stamps.first { it.code == coast.code }.moment)
+        val reversed = Recorder("t", noon).apply {
+            enter(coast, atEnd = true, moment = Moment.DAY)
+            enter(coast, atEnd = false, moment = Moment.DAY)
         }.snapshot(noon)
         assertTrue(judge(reversed).stamps.isEmpty())
     }
 
     @Test
-    fun coastWindNeedsOpenWindowForOneKilometerInsideSection() {
-        val outside = recorder().apply { drive(3_000.0, window = true) }.snapshot(noon)
-        assertTrue(judge(outside).badges.isEmpty())
-        val inside = recorder().apply {
-            enter(coast, atEnd = false, lowBeam = false)
-            drive(600.0, window = true)
-            drive(2_000.0)
-            drive(500.0, window = true)
-            enter(coast, atEnd = true, lowBeam = false)
-        }.snapshot(noon)
-        assertEquals(listOf(Badge.COAST_WIND), judge(inside).badges.map { it.badge })
+    fun limitedSpotOnlyStampsInItsWindow() {
+        val april = trip(at = LocalDateTime.of(2027, 4, 10, 12, 0), spots = mapOf(blossom.code to Moment.DAY))
+        assertEquals(listOf(blossom.code), judge(april).stamps.map { it.code })
+        assertTrue(judge(april.copy(endedAt = noon)).stamps.isEmpty())
+    }
+
+    @Test
+    fun levelGoesUpWithVisits() {
+        val history = (1..4).map { trip("h$it", noon.minusDays(it.toLong()), day()) }
+        val reveal = judge(trip(places = day()), history)
+        assertEquals(listOf(LevelUp("32030", Level.SILVER)), reveal.levelUps)
+        assertTrue(judge(trip(places = day()), history.take(2)).levelUps.isEmpty())
+        assertNull(Level.of(0))
+        assertEquals(Level.GOLD, Level.of(20))
+    }
+
+    @Test
+    fun momentFollowsWiperSunAndLowBeam() {
+        val date = noon.toLocalDate()
+        val set = Sun.sunset(date, gangneung.lat, gangneung.lon, seoul)!!.atDate(date).atZone(seoul)
+        val rise = Sun.sunrise(date, gangneung.lat, gangneung.lon, seoul)!!.atDate(date).atZone(seoul)
+        val day = noon.atZone(seoul)
+        assertEquals(Moment.RAIN, Rules.moment(set, gangneung, wiper = true, lowBeam = false))
+        assertEquals(Moment.SUNSET, Rules.moment(set.plusMinutes(10), gangneung, wiper = false, lowBeam = false))
+        assertEquals(Moment.DAWN, Rules.moment(rise.minusMinutes(40), gangneung, wiper = false, lowBeam = false))
+        assertEquals(Moment.NIGHT, Rules.moment(set.plusHours(2), gangneung, wiper = false, lowBeam = false))
+        assertEquals(Moment.NIGHT, Rules.moment(day, gangneung, wiper = false, lowBeam = true))
+        assertEquals(Moment.DAY, Rules.moment(day, gangneung, wiper = false, lowBeam = false))
+    }
+
+    @Test
+    fun badgesCountThisTripStamps() {
+        val regions = (1..9).map { Stamp("1101$it", Moment.DAY, Season.AUTUMN, noon.minusDays(1)) }
+        assertEquals(Progress(9, 10, R.string.progress_places), Rules.progress(Badge.TEN_REGIONS, emptyList(), regions))
+        assertEquals(listOf(Badge.TEN_REGIONS), judge(trip(places = day()), stamps = regions).badges.map { it.badge })
+    }
+
+    @Test
+    fun allMomentsNeedsFiveInOnePlace() {
+        val four = listOf(Moment.DAY, Moment.RAIN, Moment.NIGHT, Moment.DAWN).map { Stamp("32030", it, Season.AUTUMN, noon.minusDays(1)) }
+        val sunset = trip(places = mapOf("32030" to mapOf(Moment.SUNSET to 2_000.0)))
+        assertTrue(Badge.ALL_MOMENTS in judge(sunset, stamps = four).badges.map { it.badge })
+        val elsewhere = trip(places = mapOf("32540" to mapOf(Moment.SUNSET to 2_000.0)))
+        assertTrue(Badge.ALL_MOMENTS !in judge(elsewhere, stamps = four).badges.map { it.badge })
     }
 
     @Test
     fun rainDriverAddsWiperDistanceAcrossTrips() {
         val history = listOf(trip("a", wiperM = 60_000.0), trip("b", wiperM = 39_000.0))
-        assertTrue(judge(trip(wiperM = 999.0), history).badges.isEmpty())
-        assertEquals(listOf(Badge.RAIN_DRIVER), judge(trip(wiperM = 1_000.0), history).badges.map { it.badge })
-    }
-
-    @Test
-    fun nightPassNeedsLowBeamThroughWholeSection() {
-        val lit = recorder().apply {
-            enter(pass, atEnd = false, lowBeam = true)
-            drive(5_000.0, lowBeam = true)
-            enter(pass, atEnd = true, lowBeam = true)
-        }.snapshot(noon)
-        assertEquals(listOf(Badge.NIGHT_PASS), judge(lit).badges.map { it.badge })
-        val dark = recorder().apply {
-            enter(pass, atEnd = false, lowBeam = true)
-            drive(2_000.0, lowBeam = true)
-            drive(100.0)
-            drive(2_000.0, lowBeam = true)
-            enter(pass, atEnd = true, lowBeam = true)
-        }.snapshot(noon)
-        assertTrue(judge(dark).badges.isEmpty())
-    }
-
-    @Test
-    fun singleTripBadgesCountOneDrive() {
-        assertTrue(judge(trip(wiperM = 9_999.0, lowBeamM = 29_999.0, distanceM = 99_999.0)).badges.isEmpty())
-        val badges = judge(trip(wiperM = 10_000.0, lowBeamM = 30_000.0, distanceM = 100_000.0)).badges.map { it.badge }
-        assertEquals(listOf(Badge.SHOWER, Badge.NIGHT_RUN, Badge.LONG_DRIVE), badges)
-    }
-
-    @Test
-    fun collectionBadgesCountThisTripStamps() {
-        val coasts = Rules.spots.filter { it.kind == SpotKind.COAST }
-        val regions = (1..9).map { Stamp("1101$it", noon.minusDays(1)) } + coasts.take(2).map { Stamp(it.code, noon.minusDays(1)) }
-        assertEquals(Progress(9, 10, R.string.progress_places), Rules.progress(Badge.TEN_REGIONS, emptyList(), regions))
-        val trip = trip(regionM = mapOf("32030" to 1_000.0)).copy(spots = listOf(coasts[2].code))
-        assertEquals(listOf(Badge.TEN_REGIONS, Badge.COAST_SPOTS), judge(trip, stamps = regions).badges.map { it.badge })
+        assertTrue(Badge.RAIN_DRIVER !in judge(trip(wiperM = 999.0), history).badges.map { it.badge })
+        assertTrue(Badge.RAIN_DRIVER in judge(trip(wiperM = 1_000.0), history).badges.map { it.badge })
     }
 
     @Test
     fun ownedBadgeIsNotGivenAgain() {
-        val trip = recorder(sunrise = true).snapshot(noon)
-        assertEquals(listOf(Badge.SUNRISE_START), judge(trip).badges.map { it.badge })
-        assertTrue(judge(trip, earned = listOf(Earned(Badge.SUNRISE_START, noon.minusDays(1)))).badges.isEmpty())
+        val regions = (1..9).map { Stamp("1101$it", Moment.DAY, Season.AUTUMN, noon.minusDays(1)) }
+        assertTrue(judge(trip(places = day()), stamps = regions, earned = listOf(Earned(Badge.TEN_REGIONS, noon.minusDays(1)))).badges.isEmpty())
     }
 
     @Test
-    fun sunriseStartIsTheHourBeforeSunrise() {
-        val rise = Sun.sunrise(noon.toLocalDate(), gangneung.lat, gangneung.lon, seoul)!!.atDate(noon.toLocalDate())
-        assertTrue(Rules.isSunriseStart(rise.minusMinutes(20), gangneung, seoul))
-        assertFalse(Rules.isSunriseStart(rise.minusMinutes(90), gangneung, seoul))
-        assertFalse(Rules.isSunriseStart(rise.plusMinutes(5), gangneung, seoul))
+    fun nearestSkipsStampedAndClosedSpots() {
+        val here = coast.start
+        assertEquals(coast, Rules.nearest(here, emptyList(), noon.toLocalDate())?.first)
+        val stamped = listOf(Stamp(coast.code, Moment.DAY, Season.AUTUMN, noon))
+        assertTrue(Rules.nearest(here, stamped, noon.toLocalDate())?.first != coast)
+        assertTrue(Rules.nearest(blossom.start, emptyList(), noon.toLocalDate())?.first != blossom)
+        assertEquals(blossom, Rules.nearest(blossom.start, emptyList(), LocalDate.of(2027, 4, 10))?.first)
     }
 
     @Test
-    fun sunsetDriveIsFifteenMinutesAroundSunset() {
-        val set = Sun.sunset(noon.toLocalDate(), gangneung.lat, gangneung.lon, seoul)!!.atDate(noon.toLocalDate())
-        assertTrue(Rules.isNearSunset(set.minusMinutes(15), gangneung, seoul))
-        assertTrue(Rules.isNearSunset(set.plusMinutes(10), gangneung, seoul))
-        assertFalse(Rules.isNearSunset(set.plusMinutes(16), gangneung, seoul))
-        assertFalse(Rules.isNearSunset(noon, gangneung, seoul))
+    fun samplesShowEveryLevel() {
+        val today = LocalDate.of(2026, 11, 8)
+        val trips = Rules.sampleTrips(today)
+        val visits = Rules.visits(trips)
+        assertEquals(Level.GOLD, Level.of(visits.getValue("32030")))
+        assertEquals(Level.SILVER, Level.of(visits.getValue("32540")))
+        assertEquals(Level.BRONZE, Level.of(visits.getValue("32610")))
+        assertTrue(trips.all { it.endedAt.toLocalDate() < today })
+        assertEquals(Season.entries.toSet(), trips.filter { "32030" in it.places }.map { Season.of(it.endedAt.toLocalDate()) }.toSet())
     }
 
     @Test
     fun monthlyRecapCountsOnlyThatMonth() {
         val november = YearMonth.of(2026, 11)
         val trips = listOf(
-            trip("oct", LocalDateTime.of(2026, 10, 31, 23, 50), mapOf("11010" to 9_000.0), wiperM = 1_000.0),
-            trip("a", LocalDateTime.of(2026, 11, 1, 0, 10), mapOf("32030" to 6_000.0, "32540" to 2_000.0), wiperM = 500.0, lowBeamM = 2_000.0),
-            trip("b", LocalDateTime.of(2026, 11, 1, 18, 0), mapOf("32030" to 2_000.0), wiperM = 300.0),
-            trip("c", LocalDateTime.of(2026, 11, 30, 23, 59), mapOf("32540" to 2_000.0), lowBeamM = 1_000.0),
+            trip("oct", LocalDateTime.of(2026, 10, 31, 23, 50), day("11010", 9_000.0), wiperM = 1_000.0),
+            trip("a", LocalDateTime.of(2026, 11, 1, 0, 10), mapOf("32030" to mapOf(Moment.NIGHT to 6_000.0), "32540" to mapOf(Moment.RAIN to 2_000.0)), wiperM = 500.0),
+            trip("b", LocalDateTime.of(2026, 11, 1, 18, 0), day("32030"), wiperM = 300.0),
+            trip("c", LocalDateTime.of(2026, 11, 30, 23, 59), mapOf("32540" to mapOf(Moment.NIGHT to 1_000.0, Moment.DAY to 1_000.0))),
         )
         val stamps = listOf(
-            Stamp("11010", LocalDateTime.of(2026, 10, 31, 23, 50)),
-            Stamp("32030", LocalDateTime.of(2026, 11, 1, 0, 10)),
-            Stamp("32540", LocalDateTime.of(2026, 11, 1, 0, 10)),
-            Stamp(coast.code, LocalDateTime.of(2026, 11, 1, 0, 10)),
+            Stamp("11010", Moment.DAY, Season.AUTUMN, LocalDateTime.of(2026, 10, 31, 23, 50)),
+            Stamp("32030", Moment.NIGHT, Season.AUTUMN, LocalDateTime.of(2026, 11, 1, 0, 10)),
+            Stamp("32540", Moment.RAIN, Season.AUTUMN, LocalDateTime.of(2026, 11, 1, 0, 10)),
+            Stamp("32030", Moment.DAY, Season.AUTUMN, LocalDateTime.of(2026, 11, 1, 18, 0)),
         )
-        val earned = listOf(Earned(Badge.RAIN_DRIVER, LocalDateTime.of(2026, 10, 31, 23, 50)), Earned(Badge.NIGHT_PASS, LocalDateTime.of(2026, 11, 30, 23, 59)))
+        val earned = listOf(Earned(Badge.RAIN_DRIVER, LocalDateTime.of(2026, 10, 31, 23, 50)), Earned(Badge.TEN_REGIONS, LocalDateTime.of(2026, 11, 30, 23, 59)))
         val recap = Rules.recap(november, trips, stamps, earned)
         assertEquals(12_000.0, recap.distanceM, 0.1)
         assertEquals(3, recap.newStamps)
         assertEquals("32030", recap.topRegion)
         assertEquals(1, recap.rainyDays)
-        assertEquals(25, recap.nightPercent)
-        assertEquals(listOf(Badge.NIGHT_PASS), recap.badges.map { it.badge })
+        assertEquals(7_000.0, recap.nightM, 0.1)
+        assertEquals(listOf(Badge.TEN_REGIONS), recap.badges.map { it.badge })
     }
 
     @Test

@@ -40,7 +40,7 @@ object Store {
             try {
                 val root = JSONObject(String(file.readFully()))
                 trips += root.getJSONArray(TRIPS).objects().map(::trip)
-                stamps += root.getJSONArray(STAMPS).objects().map { Stamp(it.getString("code"), LocalDateTime.parse(it.getString("at"))) }
+                stamps += root.getJSONArray(STAMPS).objects().map { Stamp(it.getString("code"), Moment.valueOf(it.getString("moment")), Season.valueOf(it.getString("season")), LocalDateTime.parse(it.getString("at"))) }
                 earned += root.getJSONArray(EARNED).objects().map { Earned(Badge.valueOf(it.getString("badge")), LocalDateTime.parse(it.getString("at"))) }
             } catch (e: Exception) {
                 Log.e(NAME, "records unreadable, starting empty", e)
@@ -79,6 +79,11 @@ object Store {
         saveOpen(null)
     }
 
+    /** 시연용 지난 기록을 한 주행씩 판정해서 쌓습니다. */
+    fun addSamples(trips: List<Trip>) {
+        trips.forEach { add(it, Rules.judge(it, this.trips, stamps, earned)) }
+    }
+
     fun clear() {
         trips.clear()
         stamps.clear()
@@ -91,7 +96,7 @@ object Store {
             file,
             JSONObject()
                 .put(TRIPS, JSONArray(trips.map(::json)))
-                .put(STAMPS, JSONArray(stamps.map { JSONObject().put("code", it.code).put("at", it.at.toString()) }))
+                .put(STAMPS, JSONArray(stamps.map { JSONObject().put("code", it.code).put("moment", it.moment.name).put("season", it.season.name).put("at", it.at.toString()) }))
                 .put(EARNED, JSONArray(earned.map { JSONObject().put("badge", it.badge.name).put("at", it.at.toString()) })),
         )
     }
@@ -109,37 +114,29 @@ object Store {
 
     private fun JSONArray.objects() = (0 until length()).map { getJSONObject(it) }
 
-    private fun JSONArray.strings() = (0 until length()).map { getString(it) }
-
     private fun json(trip: Trip) = JSONObject()
         .put("id", trip.id)
         .put("startedAt", trip.startedAt.toString())
         .put("endedAt", trip.endedAt.toString())
         .put("distanceM", trip.distanceM)
-        .put("regionM", JSONObject(trip.regionM))
+        .put("places", JSONObject(trip.places.mapValues { (_, moments) -> JSONObject(moments.mapKeys { it.key.name }) }))
         .put("wiperM", trip.wiperM)
-        .put("lowBeamM", trip.lowBeamM)
-        .put("coastWindowM", trip.coastWindowM)
-        .put("spots", JSONArray(trip.spots))
-        .put("litPasses", JSONArray(trip.litPasses))
-        .put("sunrise", trip.sunrise)
-        .put("sunset", trip.sunset)
+        .put("spots", JSONObject(trip.spots.mapValues { it.value.name }))
 
     private fun trip(o: JSONObject): Trip {
-        val regions = o.getJSONObject("regionM")
+        val places = o.getJSONObject("places")
+        val spots = o.getJSONObject("spots")
         return Trip(
             o.getString("id"),
             LocalDateTime.parse(o.getString("startedAt")),
             LocalDateTime.parse(o.getString("endedAt")),
             o.getDouble("distanceM"),
-            regions.keys().asSequence().associateWith { regions.getDouble(it) },
+            places.keys().asSequence().associateWith { code ->
+                val moments = places.getJSONObject(code)
+                moments.keys().asSequence().associate { Moment.valueOf(it) to moments.getDouble(it) }
+            },
             o.getDouble("wiperM"),
-            o.getDouble("lowBeamM"),
-            o.getDouble("coastWindowM"),
-            o.getJSONArray("spots").strings(),
-            o.getJSONArray("litPasses").strings(),
-            o.getBoolean("sunrise"),
-            o.getBoolean("sunset"),
+            spots.keys().asSequence().associateWith { Moment.valueOf(spots.getString(it)) },
         )
     }
 
