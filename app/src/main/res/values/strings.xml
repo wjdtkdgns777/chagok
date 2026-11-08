@@ -15,7 +15,7 @@
     <string name="consent_agree">동의하고 시작</string>
     <string name="consent_later">나중에</string>
 
-    <string name="driving_title">기록 중입니다</string>
+    <string name="driving_title">주행 기록 중</string>
 
     <string name="tab_map">도장판</string>
     <string name="tab_badges">배지</string>
@@ -25,16 +25,16 @@
     <string name="map_total">/ %1$d 시군구</string>
     <string name="map_loading">지도를 불러오고 있습니다</string>
     <string name="map_provinces">도별 진행</string>
-    <string name="map_recent">최근 도장</string>
+    <string name="map_recent">도장 기록</string>
     <string name="map_empty">아직 도장이 없습니다. 차로 500m 넘게 달린 시군구에 도장이 찍힙니다.</string>
     <string name="map_spots">명소 도로</string>
     <string name="map_spot_count">%1$d / %2$d곳</string>
-    <string name="stamp_date">%1$d월 %2$d일</string>
+    <string name="stamp_date">%1$d/%2$d</string>
+    <string name="record_date">%1$d.%2$02d.%3$02d (%4$s)</string>
 
     <string name="badges_title">상황 배지</string>
     <string name="badges_count">%1$d / %2$d개</string>
-    <string name="badge_locked">아직 받지 않았습니다</string>
-    <string name="badge_earned_on">%1$d년 %2$d월 %3$d일에 받았습니다</string>
+    <string name="badge_locked">받기 전</string>
     <string name="badge_progress_km">%1$d / %2$dkm</string>
     <string name="badge_coast_wind">해안도로 바람</string>
     <string name="badge_coast_wind_rule">해안 명소 도로에서 창문을 연 채 1km 넘게 달립니다</string>
