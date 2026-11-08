@@ -362,3 +362,8 @@ flowchart LR
 </details>
 
 <br>
+
+## 출처
+
+- 시군구 경계: 통계청 SGIS 행정구역 경계를 가공한 [vuski/admdongkor](https://github.com/vuski/admdongkor) 2026-10-01판(CC BY 4.0, 공공누리 제1유형). 시군구 256곳으로 합치고 약 100m 단위로 단순화했습니다.
+- 아이콘: Google [Material Symbols](https://github.com/google/material-design-icons)(Apache 2.0), [Tabler Icons](https://github.com/tabler/tabler-icons)(MIT)
