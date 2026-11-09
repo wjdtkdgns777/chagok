@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.chagok.Badge
@@ -94,18 +96,18 @@ private fun PlaceList(places: Map<String, List<Stamp>>, visits: Map<String, Int>
     if (recent.isEmpty()) Text(stringResource(R.string.map_empty), Type.body, palette.textSub, Modifier.padding(vertical = Space.m))
     else Panel(recent) { (code, stamps) ->
         val count = visits[code] ?: 0
+        val level = Level.of(count)
         Pressable({ onOpen(code) }, Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth().heightIn(min = Space.touch).padding(vertical = Space.s), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(stampName(code), Type.body, palette.text)
-                        Level.of(count)?.let { Spacer(Modifier.width(Space.xs)); LevelTag(it) }
-                    }
+                    // 등급은 칸 색으로만 보여 주고, 화면 읽기에는 등급 이름을 함께 읽어 줍니다
+                    val name = stampName(code)
+                    val description = level?.let { stringResource(R.string.reveal_level, name, stringResource(it.label)) } ?: name
+                    Text(name, Type.body, palette.text, Modifier.semantics { contentDescription = description })
                     // 명소는 종류를, 시군구는 지난 횟수를 적습니다
                     Text(Rules.spot(code)?.let { stringResource(it.kind.label) } ?: stringResource(R.string.visits, count), Type.label, palette.textSub)
                 }
                 val got = stamps.map { it.moment }.toSet()
-                val level = Level.of(count)
                 Row(horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
                     Moment.entries.forEach { MomentDot(it, level.takeIf { _ -> it in got }, Modifier.size(48.dp)) }
                 }
