@@ -160,6 +160,18 @@ class RulesTest {
     }
 
     @Test
+    fun demoDriveAfterSamplesShowsNewStampsAndLevelUp() {
+        val today = LocalDate.of(2026, 11, 13)
+        val trips = Rules.sampleTrips(today)
+        var stamps = emptyList<Stamp>()
+        trips.forEachIndexed { index, trip -> stamps = stamps + judge(trip, trips.take(index), stamps).stamps }
+        val night = trip(at = today.atTime(23, 0), places = mapOf("32030" to mapOf(Moment.NIGHT to 7_000.0)), spots = mapOf(coast.code to Moment.NIGHT))
+        val reveal = judge(night, trips, stamps)
+        assertEquals(setOf("32030", coast.code), reveal.stamps.map { it.code }.toSet())
+        assertEquals(listOf(LevelUp(coast.code, Level.SILVER)), reveal.levelUps)
+    }
+
+    @Test
     fun monthlyRecapCountsOnlyThatMonth() {
         val november = YearMonth.of(2026, 11)
         val trips = listOf(

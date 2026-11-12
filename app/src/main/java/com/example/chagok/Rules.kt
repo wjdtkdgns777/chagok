@@ -287,13 +287,16 @@ object Rules {
     /**
      * 시연용 지난 기록. 강원 여러 곳을 1년에 걸쳐 지나서 동, 은, 금 등급과 지도 농도가 고루 보입니다.
      * 곳마다 횟수를 정하고, 각 곳의 방문을 1년에 고르게 나눠 날짜와 순간을 돌려 씁니다.
+     * 시연 주행(강릉 해안도로, 밤)에서 새 도장과 등급 상승이 보이도록 강릉시와 강릉 해안도로에는 밤 기록을 넣지 않고,
+     * 강릉 해안도로는 4일만 지나서 시연 주행으로 은 등급이 됩니다.
      */
     fun sampleTrips(today: LocalDate): List<Trip> {
-        val plan = listOf("32030" to 22, "32540" to 9, "32060" to 6, "32510" to 3, "32610" to 2, "32040" to 1, "32550" to 1, "S-DGR-PASS" to 3, "S-GN-COAST" to 1)
+        val plan = listOf(DEMO_REGION to 22, "32540" to 9, "32060" to 6, "32510" to 3, "32610" to 2, "32040" to 1, "32550" to 1, "S-DGR-PASS" to 3, DEMO_SPOT to 4)
         val visits = plan.flatMap { (code, count) -> (0 until count).map { code to it.toDouble() / count } }.sortedBy { it.second }
         return visits.mapIndexed { index, (code, share) ->
             val end = today.minusDays(SAMPLE_DAYS - (share * SAMPLE_DAYS).toLong() + 1).atTime(18, 0)
-            val moment = Moment.entries[index % Moment.entries.size]
+            val moments = if (code == DEMO_REGION || code == DEMO_SPOT) Moment.entries - Moment.NIGHT else Moment.entries
+            val moment = moments[index % moments.size]
             val meters = SAMPLE_KM * 1000
             val isSpot = spot(code) != null
             Trip(
@@ -306,6 +309,8 @@ object Rules {
     }
 
     private const val SAMPLE_DAYS = 360L
+    private const val DEMO_REGION = "32030"
+    private const val DEMO_SPOT = "S-GN-COAST"
     private const val SAMPLE_KM = 24.0
     private const val EARTH_M = 6_371_000.0
 }
