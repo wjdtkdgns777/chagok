@@ -88,6 +88,13 @@ class RulesTest {
     }
 
     @Test
+    fun sameDayCountsOnceForLevel() {
+        val sameDay = (1..4).map { trip("h$it", noon.minusHours(it.toLong()), day()) }
+        assertEquals(1, Rules.visits(sameDay).getValue("32030"))
+        assertTrue(judge(trip(places = day()), sameDay).levelUps.isEmpty())
+    }
+
+    @Test
     fun momentFollowsWiperSunAndLowBeam() {
         val date = noon.toLocalDate()
         val set = Sun.sunset(date, gangneung.lat, gangneung.lon, seoul)!!.atDate(date).atZone(seoul)

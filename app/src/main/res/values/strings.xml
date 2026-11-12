@@ -22,7 +22,7 @@
     <string name="map_recent">도장 기록</string>
     <string name="map_empty">아직 도장이 없습니다</string>
     <string name="date_short">%1$d월 %2$d일</string>
-    <string name="visits">%1$d번 지남</string>
+    <string name="visits">%1$d일 지남</string>
     <string name="nearby_title">근처 안 찍은 명소</string>
     <string name="nearby_detail">%1$s %2$dkm</string>
     <string name="nearby_guide">내비 안내</string>
@@ -53,7 +53,7 @@
     <string name="progress_places">%1$d / %2$d곳</string>
     <string name="progress_kinds">%1$d / %2$d가지</string>
     <string name="progress_cells">%1$d / %2$d칸</string>
-    <string name="progress_times">%1$d / %2$d번</string>
+    <string name="progress_days">%1$d / %2$d일</string>
     <string name="badge_ten_regions">열 곳의 방문자</string>
     <string name="badge_ten_regions_rule">서로 다른 시군구 10곳</string>
     <string name="badge_fifty_regions">전국 여행자</string>
@@ -77,7 +77,7 @@
     <string name="badge_full_book">도장첩 완성</string>
     <string name="badge_full_book_rule">한 곳의 20칸 모두</string>
     <string name="badge_regular">단골</string>
-    <string name="badge_regular_rule">한 곳을 20번 지나 금 등급</string>
+    <string name="badge_regular_rule">한 곳을 20일 지나 금 등급</string>
 
     <string name="reveal_new">새 도장 %1$d장</string>
     <string name="reveal_again">다시 지난 길</string>

@@ -40,7 +40,7 @@ enum class Season(@StringRes val label: Int) {
     }
 }
 
-/** 같은 곳을 지난 횟수로 올라가는 등급 */
+/** 같은 곳을 지난 날수로 올라가는 등급 */
 enum class Level(val visits: Int, @StringRes val label: Int) {
     BRONZE(1, R.string.level_bronze),
     SILVER(5, R.string.level_silver),
@@ -221,8 +221,9 @@ object Rules {
         return Moment.DAY
     }
 
-    /** 장소마다 지난 주행 수 */
-    fun visits(trips: List<Trip>): Map<String, Int> = trips.flatMap { it.passed.keys }.groupingBy { it }.eachCount()
+    /** 장소마다 지난 날수. 같은 날 여러 번 지나도 하루로 셉니다. */
+    fun visits(trips: List<Trip>): Map<String, Int> =
+        trips.flatMap { trip -> trip.passed.keys.map { it to trip.endedAt.toLocalDate() } }.distinct().groupingBy { it.first }.eachCount()
 
     fun judge(trip: Trip, history: List<Trip>, stamps: List<Stamp>, earned: List<Earned>): Reveal {
         val at = trip.endedAt
@@ -258,7 +259,7 @@ object Rules {
             Badge.ALL_MOMENTS -> Progress(byPlace.values.maxOfOrNull { s -> s.map { it.moment }.toSet().size } ?: 0, Moment.entries.size, R.string.progress_kinds)
             Badge.FOUR_SEASONS -> Progress(byPlace.values.maxOfOrNull { s -> s.map { it.season }.toSet().size } ?: 0, Season.entries.size, R.string.progress_kinds)
             Badge.FULL_BOOK -> Progress(byPlace.values.maxOfOrNull { it.size } ?: 0, Moment.entries.size * Season.entries.size, R.string.progress_cells)
-            Badge.REGULAR -> Progress(visits(trips).values.maxOrNull() ?: 0, Level.GOLD.visits, R.string.progress_times)
+            Badge.REGULAR -> Progress(visits(trips).values.maxOrNull() ?: 0, Level.GOLD.visits, R.string.progress_days)
         }
     }
 
